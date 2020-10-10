@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct  7 11:48:17 2020
+
+@author: shereen
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Sep 27 19:51:44 2020
+
+@author: shereen
+"""
+'''REQUIRED TO FILTER QS CONCERNING RELATIONSHIP WITH PARENTS AND DERIVE A VARIABLE ACCORDINGLY'''
+import pandas as pd
+import numpy as np
+import seaborn
+import matplotlib.pyplot as plt
+# any additional libraries would be imported here
+
+#Call in data csv file
+data = pd.read_csv('sub.csv', low_memory=False)
+
+
+#Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+#Set PANDAS to show all rows in DataFrame
+pd.set_option('display.max_rows', None)
+
+
+
+print (len(data)) #number of observations (rows)
+print (len(data.columns)) # number of variables (columns)
+
+#setting variables you will be working with to numeric
+data['H1GI1Y'] = pd.to_numeric(data['H1GI1Y'])
+data['H1GI15'] = pd.to_numeric(data['H1GI15'])
+#subset data to young single adults age 16 to 21
+sub1 = data[(data['H1GI1Y']>=74) & (data['H1GI1Y']<=79)& (data['H1GI15']==0)]
+
+#make a copy of my new subsetted data
+sub2 = sub1.copy()
+
+
+
+#Frequency distribution of feeling scale section questions
+#0 never or rarely
+#1 sometimes
+#2 a lot of the time
+#3 most of the time or all of the time
+#6 refused
+#8 don’t know
+
+#Replacing 6 (refused) and 8 (don’t know) with NaN
+sub2= sub2.replace([6,8], np.nan)
+
+
+print ('Frequency distribution of feeling scale from 0 to 3')
+#For Symptoms that don't indicate Depression or Anxiety 
+recode1 = {0: 3, 1:2,  2:1, 3:0}
+sub2['H1FS8']= sub2['H1FS8'].map(recode1)
+
+recode2 = {0: 3, 1:2,  2:1, 3:0}
+sub2['H1FS11']= sub2['H1FS11'].map(recode2)
+
+recode3 = {0: 3, 1:2,  2:1, 3:0}
+sub2['H1FS15']= sub2['H1FS15'].map(recode3)
+
+
+sub2['DEP_DEG']=(sub2['H1FS1']) + (sub2['H1FS2']) + (sub2['H1FS3']) + (sub2['H1FS4']) + (sub2['H1FS5']) + (sub2['H1FS6'])+ (sub2['H1FS7']) + (sub2['H1FS8'] ) + (sub2['H1FS9']) + (sub2['H1FS10']) + (sub2['H1FS11']) + (sub2['H1FS12']) + (sub2['H1FS13']) + (sub2['H1FS14']) + (sub2['H1FS15']) + (sub2['H1FS16']) + (sub2['H1FS17']) + (sub2['H1FS18'])  + (sub2['H1FS19'])
+
+# sub2['DEP_DEG'].max() = 49.0
+# sub2['DEP_DEG'].min() = 0.0
+def DEPSMPT (row):
+   if row['DEP_DEG'] <= 10 :
+      return 0
+   elif (row['DEP_DEG'] > 10) & (row['DEP_DEG'] <= 25):
+      return 1
+   else :
+      return 2
+         
+sub2['DEPSMPT'] = sub2.apply (lambda row: DEPSMPT (row),axis=1)
+
+cn1= sub2.groupby('DEPSMPT').size()
+print (cn1)
+
+
+# change format from numeric to categorical
+sub2['DEPSMPT'] = sub2['DEPSMPT'].astype('category')
+
+
+#univariate bar graph for categorical variables
+# First hange format from numeric to categorical
+sub2["DEPSMPT"] = sub2["DEPSMPT"].astype('category')
+
+print ('Describe DEPSMPT')
+desc1 = sub2['DEPSMPT'].describe()
+print (desc1)
+
+#Naming dummy values 
+sub2['DEPSMPT']=sub2['DEPSMPT'].cat.rename_categories(["None or Low", 'Medium', 'High']) 
+seaborn.countplot(x="DEPSMPT", data=sub2)
+plt.xlabel('Depression Suspicion')
+plt.title('Unmarried Young Adults Aged 16-21 With Depression Or Anxiety Symptom(s)')
+
+
+
+
+
+#Frequency distribution showing the effect of Family relationship on feeling scale
+
+
+
+#1st: Frequency distribution for those with one or more depression symptom
+
+#On how many of the past 7 days was at least one of your parents in the room with you while you ate your evening meal?
+#Assume from 4 to 7 means yes (=1)
+#Assume from 0 to 3 means no (=0)
+sub2['H1WP8']= sub2['H1WP8'].replace([4,5,6,7], 1)
+sub2['H1WP8']= sub2['H1WP8'].replace([0,1,2,3], 0)
+#Replacing 96 (refused), 97 (legitimate skip) and 98 (don’t know) with NaN
+sub2['H1WP8']= sub2['H1WP8'].replace([96,97,98], np.nan)
+
+print ('counts for H1WP8')
+c22 = sub2['H1WP8'].value_counts(sort=False, dropna=True)
+print(c22)
+
+print ('percentages H1WP8')
+p22 = sub2['H1WP8'].value_counts(sort=False, normalize=True, dropna=True)
+print (p22*100)
+
+# Did you have a talk with your mother about a personal problem you were having
+print ('counts for  H1WP17F')
+c23 = sub2['H1WP17F'].value_counts(sort=False, dropna=True)
+print(c23)
+
+print ('percentages  H1WP17F')
+p23 = sub2['H1WP17F'].value_counts(sort=False, normalize=True, dropna=True)
+print (p23*100)
+# Did you have a talk with your father about a personal problem you were having  
+print ('counts for H1WP18F')
+c24 = sub2['H1WP18F'].value_counts(sort=False, dropna=True)
+print(c24)
+
+print ('percentages H1WP18F')
+p24 = sub2['H1WP18F'].value_counts(sort=False, normalize=True, dropna=True)
+print (p24*100)
+#Did you talk  with your mother about other things you’re doing in school  
+print ('counts for H1WP17J')
+c25 = sub2['H1WP17J'].value_counts(sort=False, dropna=True)
+print(c25)
+
+print ('percentages H1WP17J')
+p25 = sub2['H1WP17J'].value_counts(sort=False, normalize=True, dropna=True)
+print (p25*100)
+#Did you talk  with your father about other things you’re doing in school
+print ('counts for  H1WP18J')
+c26 = sub2['H1WP18J'].value_counts(sort=False, dropna=True)
+print(c26)
+
+print ('percentages  H1WP18J')
+p26 = sub2['H1WP18J'].value_counts(sort=False, normalize=True, dropna=True)
+print (p26*100)
+
+#gone shopping with mother?
+print ('counts for H1WP17A')
+c27 = sub2['H1WP17A'].value_counts(sort=False, dropna=True)
+print(c27)
+
+print ('percentages H1WP17A')
+p27 = sub2['H1WP17A'].value_counts(sort=False, normalize=True, dropna=True)
+print (p27*100)
+#played a sport with mother?
+print ('counts for H1WP17B')
+c28 = sub2['H1WP17B'].value_counts(sort=False, dropna=True)
+print(c28)
+
+print ('percentages H1WP17B')
+p28 = sub2['H1WP17B'].value_counts(sort=False, normalize=True, dropna=True)
+print (p28*100)
+#worked on a project for school with mother?
+print ('counts for H1WP17I')
+c29 = sub2['H1WP17I'].value_counts(sort=False, dropna=True)
+print(c29)
+
+print ('percentages H1WP17I')
+p29 = sub2['H1WP17I'].value_counts(sort=False, normalize=True, dropna=True)
+print (p29*100)
+#gone shopping with father?  
+print ('counts for H1WP18A')
+c30 = sub2['H1WP18A'].value_counts(sort=False, dropna=True)
+print(c30)
+
+print ('percentages H1WP18A')
+p30 = sub2['H1WP18A'].value_counts(sort=False, normalize=True, dropna=True)
+print (p30*100)
+#played a sport with father?
+print ('counts for H1WP18B')
+c31 = sub2['H1WP18B'].value_counts(sort=False, dropna=True)
+print(c31)
+
+print ('percentages H1WP18B')
+p31 = sub2['H1WP18B'].value_counts(sort=False, normalize=True, dropna=True)
+print (p31*100)
+
+#worked on a project for school with father?
+print ('counts for H1WP18I')
+c32 = sub2['H1WP18I'].value_counts(sort=False, dropna=True)
+print(c32)
+
+print ('percentages H1WP18I')
+p32 = sub2['H1WP18I'].value_counts(sort=False, normalize=True, dropna=True)
+print (p32*100)
+
+
+
+
+print('Frequency distribution showing the effect of Family relationship on feeling scale')
+print('1st: Frequency distribution for those with one or more depression symptom')
+#Assume 1 indicates strong relationship with parents while 0 indicates weak one
+
+
+
+print('2nd: Frequency distribution of those with no potential depression symptoms')
+
+#New Variable indicating Relationship with Parents
+
+sub2['RELWPAR_DEG']= (sub2['H1WP8']) + (sub2['H1WP17F']) + (sub2['H1WP18F']) + (sub2['H1WP17J']) + (sub2['H1WP18J']) + (sub2['H1WP17A'])+ (sub2['H1WP17I']) + (sub2['H1WP14'] == 1) + (sub2['H1WP9']) + (sub2['H1WP13'])
+
+#center and spread
+print ('describe depression score')
+desc = sub2['RELWPAR_DEG'].describe()
+print (desc)
+
+
+
+
+def RELWPAR (row):
+   if row['RELWPAR_DEG'] > 8:
+      return 1
+   else :
+      return 0
+  
+
+
+sub2['RELWPAR'] = sub2.apply (lambda row: RELWPAR (row),axis=1)
+
+cn2= sub2.groupby('RELWPAR').size()
+print (cn2) 
+
+
+
+
+#univariate bar graph for categorical variables
+# First hange format from numeric to categorical
+sub2["RELWPAR"] = sub2["RELWPAR"].astype('category')
+
+print ('Describe RELWPAR')
+desc2 = sub2['RELWPAR'].describe()
+print (desc2)
+#Naming dummy values 
+#sub2['RELWPAR']=sub2['RELWPAR'].cat.rename_categories(["Good", "Not Good Enough"])
+seaborn.countplot(x="RELWPAR", data=sub2)
+plt.xlabel('Relationship With Parents')
+plt.title('Unmarried Young Adults Counts VS Realtionship With their Parents ')
+
+
+
+
+
+def DEP_WER (row):
+   if (row['RELWPAR'] == 0) & (row['DEPSMPT'] == 'High'):
+      return 0
+   elif (row['RELWPAR'] == 1) & (row['DEPSMPT'] == 'None or Low'):
+      return 1
+   else :
+      return 2
+  
+
+sub2['DEP_WER'] = sub2.apply (lambda row: DEP_WER (row),axis=1)
+
+cn3= sub2.groupby('DEP_WER').size()
+print (cn3)
+
+
+
+#univariate bar graph for categorical variables
+# First hange format from numeric to categorical
+sub2["DEP_WER"] = sub2["DEP_WER"].astype('category')
+
+print ('Describe DEP_WER')
+desc3 = sub2['DEP_WER'].describe()
+print (desc3)
+
+#Naming dummy values 
+sub2['DEP_WER']=sub2['DEP_WER'].cat.rename_categories(["Negative", "Positive", "Neither Nor"]) 
+
+seaborn.countplot(x="DEP_WER", data=sub2)
+plt.title('Effect of Realtionship With Parents On their Children\'s Mental Health')
+plt.xlabel('*Unmarried Young Adults Aged 16-21 Was Selected')
+
+# bivariate bar graph C->C
+sub2['RELWPAR'] = pd.to_numeric(sub2['RELWPAR'])
+seaborn.factorplot(x="DEPSMPT", y="RELWPAR", data=sub2, kind="bar", ci=None)
+plt.xlabel('Depression Or Anxiety Suspicion')
+plt.ylabel('Proportion Good Relationship With Parents')
+
+
+
+#upper-case all DataFrame column names - place afer code for loading data above
+data.columns = map(str.upper, data.columns)
+
+# bug fix for display formats to avoid run time errors - put after code for loading data above
+pd.set_option('display.float_format', lambda x:'%f'%x)
